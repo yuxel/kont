@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Simple bash script to connect to pod from command line
+# Usage: kont <any-search-keyword>
+
+function searchPod {
+  IFS=$'\t'
+  search=$1
+  out=`kubectl get pods --all-namespaces | grep $search`
+
+  if [ $? -eq 0 ]; then
+    lineCount=`echo $out | wc -l`
+
+    if [ "$lineCount" -eq "1" ]; then
+      namespace=`echo -n $out | awk '{print $1}'`
+      podName=`echo -n $out | awk '{print $2}'`
+      echo "Connecting to pod: $podName on namespace $namespace"
+      kubectl -n $namespace exec -it $podName -- sh -c "clear; (bash || ash || sh)"
+    else
+      echo "Multiple occurrence found for search: $podName"
+      echo $out
+      echo -n "Type the pod name to connect: "
+      read search
+      searchPod "$search"
+    fi
+  else
+    echo "Cannot find pod with search term: $1"
+  fi
+}
+
+searchPod "$1"
+
+
+
